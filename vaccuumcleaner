@@ -1,0 +1,40 @@
+import random
+
+# Define environment with 4 quadrants
+environment = {
+    "A": random.choice(["Clean", "Dirty"]),
+    "B": random.choice(["Clean", "Dirty"]),
+    "C": random.choice(["Clean", "Dirty"]),
+    "D": random.choice(["Clean", "Dirty"])
+}
+
+# Vacuum starts at position A
+current_position = "A"
+
+# Possible moves between quadrants
+moves = {
+    "A": ["B", "C"],
+    "B": ["A", "D"],
+    "C": ["A", "D"],
+    "D": ["B", "C"]
+}
+
+def vacuum_agent(position):
+    global environment
+    if environment[position] == "Dirty":
+        print(f"Vacuum at {position}: Found Dirty → Suck")
+        environment[position] = "Clean"
+    else:
+        print(f"Vacuum at {position}: Already Clean")
+    
+    # Move to a new quadrant
+    new_position = random.choice(moves[position])
+    print(f"Moving from {position} → {new_position}\n")
+    return new_position
+
+# Run the agent for a few steps
+print("Initial Environment:", environment, "\n")
+for _ in range(10):
+    current_position = vacuum_agent(current_position)
+
+print("Final Environment:", environment)
