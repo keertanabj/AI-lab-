@@ -1,0 +1,117 @@
+import copy
+def print_board(board):
+    for row in board:
+        print(' '.join(str(x) if x != 0 else ' ' for x in row))
+    print()
+
+def find_zero(board):
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == 0:
+                return i, j
+
+def is_solved(board):
+    solved = [1,2,3,4,5,6,7,8,0]
+    flat = [num for row in board for num in row]
+    return flat == solved
+
+def valid_moves(zero_pos):
+    i, j = zero_pos
+    moves = []
+    if i > 0: moves.append((i-1, j))
+    if i < 2: moves.append((i+1, j))
+    if j > 0: moves.append((i, j-1))
+    if j < 2: moves.append((i, j+1))
+    return moves
+
+def correct_tiles_count(board):
+    """Count how many tiles are in their correct position."""
+    count = 0
+    goal = [1,2,3,4,5,6,7,8,0]
+    flat = [num for row in board for num in row]
+    for i in range(9):
+        if flat[i] != 0 and flat[i] == goal[i]:
+            count += 1
+    return count
+
+def get_user_move(board):
+    zero_pos = find_zero(board)
+    moves = valid_moves(zero_pos)
+    movable_tiles = [board[i][j] for (i,j) in moves]
+   
+    print(f"Tiles you can move: {movable_tiles}")
+
+    while True:
+        try:
+            move = int(input("Enter the tile number to move (or 0 to quit): "))
+            if move == 0:
+                return None
+            if move in movable_tiles:
+                return move
+            else:
+                print("Invalid tile. Please choose a tile adjacent to the empty space.")
+        except ValueError:
+            print("Please enter a valid number.")
+
+def evaluate_move(board, tile):
+    """Compare user move to all possible moves and tell if it's best/worst."""
+    zero_pos = find_zero(board)
+    moves = valid_moves(zero_pos)
+    movable_tiles = [board[i][j] for (i,j) in moves]
+
+    scores = {}
+    for t in movable_tiles:
+        temp_board = copy.deepcopy(board)
+        make_move(temp_board, t)
+        scores[t] = correct_tiles_count(temp_board)
+
+    user_score = scores[tile]
+    best_score = max(scores.values())
+    worst_score = min(scores.values())
+
+    if user_score == best_score and user_score == worst_score:
+       
+        return "Your move is the only possible move."
+    elif user_score == best_score:
+        return "Great! You chose the best move."
+    elif user_score == worst_score:
+        return "Oops! You chose the worst move."
+    else:
+        return "Your move is neither the best nor the worst."
+
+def make_move(board, tile):
+    zero_i, zero_j = find_zero(board)
+    for i, j in valid_moves((zero_i, zero_j)):
+        if board[i][j] == tile:
+            board[zero_i][zero_j], board[i][j] = board[i][j], board[zero_i][zero_j]
+            return
+
+def main():
+    board = [
+        [1, 2, 3],
+        [4, 0, 6],
+        [7, 5, 8]
+    ]
+    print("Welcome to the 8 Puzzle Game!")
+    print("Arrange the tiles to match this goal state:")
+    print("1 2 3\n4 5 6\n7 8  ")
+
+    while True:
+        print_board(board)
+        if is_solved(board):
+            print("Congratulations! You solved the puzzle!")
+            break
+        move = get_user_move(board)
+        if move is None:
+            print("Game exited. Goodbye!")
+            break
+       
+        # Evaluate user move
+        feedback = evaluate_move(board, move)
+        print(feedback)
+       
+        make_move(board, move)
+
+if __name__ == "__main__":
+    main()
+
