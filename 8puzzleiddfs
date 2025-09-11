@@ -1,0 +1,82 @@
+GOAL_STATE = (1, 2, 3, 4, 5, 6, 7, 8, 0)
+MOVES = {
+    'up': -3,
+    'down': 3,
+    'left': -1,
+    'right': 1
+}
+
+def is_valid_move(blank_idx, move):
+    if move == 'up':
+        return blank_idx >= 3
+    elif move == 'down':
+        return blank_idx <= 5
+    elif move == 'left':
+        return blank_idx % 3 != 0
+    elif move == 'right':
+        return blank_idx % 3 != 2
+    return False
+
+def get_new_state(state, blank_idx, move):
+    new_idx = blank_idx + MOVES[move]
+    state_lst = list(state)
+    state_lst[blank_idx], state_lst[new_idx] = state_lst[new_idx], state_lst[blank_idx]
+    return tuple(state_lst)
+
+def dfs(state, depth, max_depth, path, visited):
+    if state == GOAL_STATE:
+        return path
+
+    if depth == max_depth:
+        return None
+
+    blank_idx = state.index(0)
+    for move in MOVES:
+        if is_valid_move(blank_idx, move):
+            new_state = get_new_state(state, blank_idx, move)
+            if new_state not in visited:
+                visited.add(new_state)
+                result = dfs(new_state, depth + 1, max_depth, path + [move], visited)
+                if result is not None:
+                    return result
+                visited.remove(new_state)
+    return None
+
+def iddfs(start_state, max_depth=50):
+    for depth in range(max_depth):
+        print(f"Trying depth {depth}...")
+        visited = set([start_state])
+        path = dfs(start_state, 0, depth, [], visited)
+        if path is not None:
+            return path
+    return None
+
+def print_board(state):
+    for i in range(0, 9, 3):
+        row = state[i:i+3]
+        print(' '.join(str(x) if x != 0 else '_' for x in row))
+    print()
+
+if __name__ == "__main__":
+    start_state = (1, 2, 3,
+                   5, 0, 6,
+                   4, 7, 8)
+
+    print("Start State:")
+    print_board(start_state)
+
+    solution = iddfs(start_state)
+    if solution:
+        print("Solution found!")
+        print("Moves:", solution)
+        print("Number of moves:", len(solution))
+
+        # Optional: Show the steps
+        state = start_state
+        for move in solution:
+            blank_idx = state.index(0)
+            state = get_new_state(state, blank_idx, move)
+            print(f"Move: {move}")
+            print_board(state)
+    else:
+        print("No solution found.")
