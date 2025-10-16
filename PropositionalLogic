@@ -1,0 +1,77 @@
+from itertools import product
+
+# Function for logical implication
+def imply(a, b):
+    return (not a) or b
+
+# Convert user input to Python-evaluable expressions
+import re
+
+def convert_to_python_syntax(s):
+    # Replace logical operators
+    s = s.replace('!','not ')
+    s = s.replace('∧',' and ')
+    s = s.replace('∨',' or ')
+    s = s.replace('↔','==')
+    
+    # Replace -> with imply(a,b) properly
+    pattern = r'([A-Za-z() not]+)\s*->\s*([A-Za-z() not]+)'
+    while re.search(pattern, s):
+        s = re.sub(pattern, r'imply(\1, \2)', s)
+    
+    return s
+
+
+
+# Input KB
+n = int(input("Enter number of KB sentences: "))
+kb_original = []
+kb_converted = []
+
+for i in range(n):
+    s = input(f"Enter sentence {i+1} (use !, ∧, ∨, ->, ↔): ")
+    kb_original.append(s)
+    kb_converted.append(convert_to_python_syntax(s))
+
+# Input Queries
+queries_input = input("Enter queries separated by comma: ")
+queries_original = [q.strip() for q in queries_input.split(',')]
+queries_converted = [convert_to_python_syntax(q) for q in queries_original]
+
+# Extract all variables from KB and queries
+import re
+variables = set()
+for sentence in kb_original + queries_original:
+    vars_in_s = re.findall(r'\b[A-Za-z]\b', sentence)
+    variables.update(vars_in_s)
+variables = sorted(list(variables))  # sort for consistent order
+
+# Generate all possible truth assignments
+assignments = list(product([False, True], repeat=len(variables)))
+
+# Print Truth Table Header
+header = variables + kb_original + ['KB True?']
+print("\nTruth Table:")
+print('  '.join(f"{h:<8}" for h in header))
+print('-' * (len(header) * 10))
+
+# Evaluate each row
+models = []  # rows where KB is True
+for vals in assignments:
+    valuation = dict(zip(variables, vals))
+    kb_values = [eval(expr, {"imply": imply}, valuation) for expr in kb_converted]
+    kb_true = all(kb_values)
+    if kb_true:
+        models.append(valuation)
+    row = vals + tuple(kb_values) + (kb_true,)
+    print('  '.join(f"{str(x):<8}" for x in row))
+
+# Entailment check
+print("\nModels where KB is True:")
+for m in models:
+    print(m)
+
+print("\nEntailment results:")
+for i, query in enumerate(queries_converted):
+    entails = all(eval(query, {"imply": imply}, m) for m in models)
+    print(f"Does KB entail {queries_original[i]}? --> {entails}")
