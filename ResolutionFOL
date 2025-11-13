@@ -1,0 +1,93 @@
+def disjunctify(clauses):
+    """
+    Convert each clause (string) into a tuple of literals.
+    Example: ['A v B', '~A v C'] → [('A', 'B'), ('~A', 'C')]
+    """
+    disjuncts = []
+    for clause in clauses:
+        # Allow spaces and strip each literal
+        disjuncts.append(tuple(lit.strip() for lit in clause.split('v')))
+    return disjuncts
+
+
+def getResolvant(ci, cj, di, dj):
+    """Return the resolvent of clauses ci and cj on complementary literals di and dj."""
+    resolvant = list(ci) + list(cj)
+    resolvant.remove(di)
+    resolvant.remove(dj)
+    # Remove duplicates
+    resolvant = tuple(sorted(set(resolvant)))
+    return resolvant
+
+
+def resolve(ci, cj):
+    """
+    Try to resolve two clauses.
+    Returns:
+        - A resolvent tuple if a complementary pair is found
+        - None if no complementary pair exists
+    """
+    for di in ci:
+        for dj in cj:
+            if di == '~' + dj or dj == '~' + di:
+                return getResolvant(ci, cj, di, dj)
+    return None
+
+
+def checkResolution(clauses, query):
+    """
+    Apply resolution algorithm to check if KB entails the query.
+    KB ⊨ Q if KB ∧ ¬Q ⊢ ⊥
+    """
+    # Add negation of query for proof by contradiction
+    negated_query = query if query.startswith('~') else '~' + query
+    clauses += [negated_query]
+
+    print(f"\nTrying to prove {'^'.join(['(' + c + ')' for c in clauses])} by contradiction...\n")
+
+    # Convert to list of tuples (CNF form)
+    clauses = disjunctify(clauses)
+    resolved = False
+    new = set()
+
+    while True:
+        n = len(clauses)
+        pairs = [(clauses[i], clauses[j]) for i in range(n) for j in range(i + 1, n)]
+
+        for (ci, cj) in pairs:
+            resolvant = resolve(ci, cj)
+            if resolvant is None:
+                continue
+
+            print(f"Resolving {ci} and {cj} → {resolvant}")
+
+            # Check for empty clause (contradiction)
+            if resolvant == ():
+                print("\n✅ Empty clause derived!")
+                resolved = True
+                break
+
+            new.add(resolvant)
+
+        if resolved:
+            break
+
+        # No new information → stop
+        if new.issubset(set(clauses)):
+            break
+
+        for clause in new:
+            if clause not in clauses:
+                clauses.append(clause)
+
+    if resolved:
+        print("\n✅ Knowledge Base entails the query (proved by resolution).")
+    else:
+        print("\n❌ Knowledge Base does NOT entail the query (no contradiction found).")
+
+
+# --- Example Run ---
+if __name__ == "__main__":
+    clauses = input("Enter the clauses (separated by spaces): ").split(' ')
+    query = input("Enter the query: ")
+    checkResolution(clauses, query)
